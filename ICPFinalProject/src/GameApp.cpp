@@ -1,0 +1,359 @@
+#include <GL/glew.h> // GLEW provides efficient run-time mechanisms for determining which OpenGL extensions are supported on the target platform.
+#include <GLFW/glfw3.h> // library for app window creation
+#include <glm/glm.hpp> // ibrary for math operations
+#include <glm/ext.hpp>
+#include <iostream>
+#include <filesystem>
+#include "stb_image.h" // loading image textures library
+
+
+
+#include "GameApp.h"
+#include "ShaderProgram.h"
+#include "Camera.h"
+#include "Model.h"
+
+
+
+
+/*
+
+
+	- The graphics pipeline takes as input a set of 3D coordinates and transforms these to colored 2D pixels on your screen. 
+	- The graphics pipeline can be divided into several steps where each step requires the output of the previous step as its input.
+	SHADERS = The processing cores run small programs on the GPU for each step of the pipeline. These small programs are called shaders.
+	- Shaders are written in the OpenGL Shading Language (GLSL)
+	- Have to setup atleast vertex and fragment shaders !
+
+	VERTEX SHADER = Process endpoints of polygons.
+	FRAGMENT (PIXEL) SHADER = Process how pixels between verticies looks like
+
+	- A fragment in OpenGL is all the data required for OpenGL to render a single pixel.
+
+	modes: glBufferData() 
+	GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
+	GL_STATIC_DRAW: the data is set only once and used many times.
+	GL_DYNAMIC_DRAW: the data is changed a lot and used many times.
+
+
+
+*/
+
+
+
+//constructor
+GameApp::GameApp() {
+
+}
+
+// init game window
+// register window callbacks
+// returns window object
+GLFWwindow* GameApp::game_init_window() {
+
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "ICPFinalGames", NULL, NULL);
+
+	if (window == NULL)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return NULL;
+	}
+
+	// make window current context
+	glfwSetWindowUserPointer(window, this);
+	glfwMakeContextCurrent(window);
+	
+	// some window setups
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // hide cursor
+
+	// init callbacks
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	return window;
+
+}
+
+
+int GameApp::run_game() {
+
+	GLFWwindow* window = game_init_window();
+
+	if (window == NULL)
+		return -1;
+
+	// ini 
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+	{
+		/* Problem: glewInit failed, something is seriously wrong. */
+		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+		return -1;
+	}
+	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
+
+
+	// tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
+	stbi_set_flip_vertically_on_load(true);
+
+	// configure global opengl state
+	// -----------------------------
+	glEnable(GL_DEPTH_TEST);
+
+	// build and compile shaders
+	// ------------------------------------
+	ShaderProgram ourShader("resources/shaders/vertex_shader.vert", "resources/shaders/fragment_shader.frag");
+	ShaderProgram lightShader("resources/shaders/light_vertex_shader.vert", "resources/shaders/light_fragment_shader.frag");
+
+	// Just for info: Getm maximun num of vertex attributes supported by GPU
+	int nrAttributes;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+	std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
+
+	// load models
+	// -----------
+	//Model ourModel = Model("resources/objects/backpack/backpack.obj");
+	//Model ourModel = Model("resources/objects/bee/scene.gltf");
+	//Model ourModel = Model("resources/objects/honey_jar/honey_jar.obj");
+	Model qube = Model("resources/objects/cube_textured/cube_textured_opengl.obj");
+	//Model qube = Model("resources/objects/wooden_map/Wooden.obj");
+	Model light = Model("resources/objects/cube/cube_triangles_normals_tex.obj");
+	/* MAIN PROGRAM LOOP */
+	double previousTime = glfwGetTime();
+	int frameCount = 0;
+
+	//light position
+	glm::vec3 lightPos(-0.2f, -1.0f, -0.3f);
+	glm::vec3 objectColor(1.0f, 0.5f, 0.31f);
+
+	glm::vec3 cubePositions[] = {
+	glm::vec3(0.0f,  0.0f,  0.0f),
+	glm::vec3(2.0f,  5.0f, -15.0f),
+	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(-3.8f, -2.0f, -12.3f),
+	glm::vec3(2.4f, -0.4f, -3.5f),
+	glm::vec3(-1.7f,  3.0f, -7.5f),
+	glm::vec3(1.3f, -2.0f, -2.5f),
+	glm::vec3(1.5f,  2.0f, -2.5f),
+	glm::vec3(1.5f,  0.2f, -1.5f),
+	glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
+	glm::vec3 pointLightPositions[] = {
+	glm::vec3(0.7f,  0.2f,  2.0f),
+	glm::vec3(2.3f, -3.3f, -4.0f),
+	glm::vec3(-4.0f,  2.0f, -12.0f),
+	glm::vec3(0.0f,  0.0f, -3.0f)
+	};
+
+	
+
+	while (!glfwWindowShouldClose(window))
+	{
+
+		// Measure FPS speed
+		float currentFrame = glfwGetTime();
+		// count delta time
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+		frameCount++;
+		// If a second has passed.
+		if (currentFrame - previousTime >= 1.0)
+		{
+			// Display the frame count here any way you want.
+			std::cout << "FPS: " << frameCount << std::endl;
+
+			frameCount = 0;
+			previousTime = currentFrame;
+		}
+
+		// check keyboard inputs
+		processInput(window);
+
+		/* rendering commands ... */
+
+		// first clear the colorbuffer and depth buffer
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// light setup color
+		glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
+
+
+		// don't forget to enable shader before setting uniforms
+		ourShader.use();
+		ourShader.setVec3("viewPos", camera.Position);
+		ourShader.setFloat("material.shininess", 32.0f);
+
+
+		/*
+		   Here we set all the uniforms for the 5/6 types of lights we have. We have to set them manually and index
+		   the proper PointLight struct in the array to set each uniform variable. This can be done more code-friendly
+		   by defining light types as classes and set their values in there, or by using a more efficient uniform approach
+		   by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
+		*/
+		// directional light
+		ourShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+		ourShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+		ourShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+		ourShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+		// point light 1
+		ourShader.setVec3("pointLights[0].position", pointLightPositions[0]);
+		ourShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+		ourShader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+		ourShader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+		ourShader.setFloat("pointLights[0].constant", 1.0f);
+		ourShader.setFloat("pointLights[0].linear", 0.09f);
+		ourShader.setFloat("pointLights[0].quadratic", 0.032f);
+		// point light 2
+		ourShader.setVec3("pointLights[1].position", pointLightPositions[1]);
+		ourShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
+		ourShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
+		ourShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+		ourShader.setFloat("pointLights[1].constant", 1.0f);
+		ourShader.setFloat("pointLights[1].linear", 0.09f);
+		ourShader.setFloat("pointLights[1].quadratic", 0.032f);
+		// point light 3
+		ourShader.setVec3("pointLights[2].position", pointLightPositions[2]);
+		ourShader.setVec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
+		ourShader.setVec3("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f);
+		ourShader.setVec3("pointLights[2].specular", 1.0f, 1.0f, 1.0f);
+		ourShader.setFloat("pointLights[2].constant", 1.0f);
+		ourShader.setFloat("pointLights[2].linear", 0.09f);
+		ourShader.setFloat("pointLights[2].quadratic", 0.032f);
+		// point light 4
+		ourShader.setVec3("pointLights[3].position", pointLightPositions[3]);
+		ourShader.setVec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
+		ourShader.setVec3("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f);
+		ourShader.setVec3("pointLights[3].specular", 1.0f, 1.0f, 1.0f);
+		ourShader.setFloat("pointLights[3].constant", 1.0f);
+		ourShader.setFloat("pointLights[3].linear", 0.09f);
+		ourShader.setFloat("pointLights[3].quadratic", 0.032f);
+
+		/* Going 3D */
+
+		// 2. View matrix
+		glm::mat4 view;
+		view = camera.GetViewMatrix();
+		// 3. Projection matrix
+		glm::mat4 projection = glm::mat4(1.0f);;
+		projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		ourShader.setMat4("view", view);
+		ourShader.setMat4("projection", projection);
+
+
+		/* TRANSOFRAMTION */
+		
+		glm::mat4 model = glm::mat4(1.0f);
+		// render the loaded model
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			ourShader.setMat4("model", model);
+			qube.Draw(ourShader);
+		}
+
+
+		/* Light */
+		// don't forget to use the corresponding shader program first (to set the uniform)
+		lightShader.use();
+		lightShader.setMat4("view", view);
+		lightShader.setMat4("projection", projection);
+		
+		for (unsigned int i = 0; i < 4; i++)
+		{
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, pointLightPositions[i]);
+			model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
+			lightShader.setMat4("model", model);
+			light.Draw(lightShader);
+		}
+
+		// check and call events and swap the buffers
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	return 0;
+
+
+}
+
+
+//destructor
+GameApp::~GameApp() {
+
+
+	glfwTerminate();
+	std::cout << "Destructor was called." << std::endl;
+
+}
+
+
+/* Defined callbacks and key process inputs for game window */
+
+// define key inputs
+void GameApp::processInput(GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.ProcessKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+// callback on resize window
+void GameApp::framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+
+// callback on mouse movement
+void GameApp::mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+
+	// Retrieve the user pointer
+	GameApp* gameApp = static_cast<GameApp*>(glfwGetWindowUserPointer(window));
+	if (gameApp) {
+
+		float xpos = static_cast<float>(xposIn);
+		float ypos = static_cast<float>(yposIn);
+
+		float xoffset = xpos - gameApp->lastX;
+		float yoffset = gameApp->lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+		gameApp->lastX = xpos;
+		gameApp->lastY = ypos;
+		gameApp->camera.ProcessMouseMovement(xoffset, yoffset);
+
+	}
+}
+
+
+// scroll callback
+void GameApp::scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+
+	// Retrieve the user pointer
+	GameApp* gameApp = static_cast<GameApp*>(glfwGetWindowUserPointer(window));
+
+	// Call the class-specific function
+	if (gameApp)
+		gameApp->camera.ProcessMouseScroll(static_cast<float>(yoffset));
+
+}
