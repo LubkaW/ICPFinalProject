@@ -6,24 +6,29 @@
 #include <glm/ext.hpp>
 
 #include "Camera.h"
+#include "Plane.h"
 
 class GameApp {
 
 public:
 	// settings
-	const unsigned int SCR_WIDTH = 800;
-	const unsigned int SCR_HEIGHT = 600;
+	const unsigned int SCR_WIDTH = 1920;
+	const unsigned int SCR_HEIGHT = 1080;
 
 	// timing
 	float deltaTime = 0.0f;	// Time between current frame and last frame
 	float lastFrame = 0.0f; // Time of last frame
-
+	int score = 0;
+	int activeView = 0;
 
 	// camera
 	float lastX = SCR_WIDTH / 2.0f;
 	float lastY = SCR_HEIGHT / 2.0f;
 	bool firstMouse = true;
-	Camera camera = Camera(glm::vec3(0.0f, 0.0f, 0.3f));
+	Camera camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.0f,0.0f);
+
+	// plane(position/front/yaw/pitch)
+	Plane plane = Plane(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f);
 
 
 	GameApp();

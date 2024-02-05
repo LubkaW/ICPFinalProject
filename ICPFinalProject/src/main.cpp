@@ -14,7 +14,6 @@ int main() {
 		std::cout << "There was an error ! Check error output !" << std::endl;
 		return -1;
 	}
-
 }
 
 
