@@ -188,6 +188,18 @@ int GameApp::run_game() {
 	glm::vec3(randomFloatInRange(2.0f,5.0f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(2.0f,5.0f)),
 	};
 
+	glm::vec3 flame_forwards[100];
+	float flame_lifecycle[100];
+	float flame_lifespan[100];
+
+
+	for (unsigned int i = 0; i < 100; i++) {
+		flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
+		flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
+		flame_lifespan[i] = randomFloatInRange(0.1f, 0.5f);
+	}
+	
+
 	int baloon_cooldowns[] = { 0,0,0,0,0,0,0,0,0 };
 
 
@@ -385,7 +397,7 @@ int GameApp::run_game() {
 				float angle = 20.0f * i;
 				model = glm::scale(model, glm::vec3(0.1f)); // Make it a smaller plane
 				ourShader.setMat4("model", model);
-				qube.Draw(ourShader);
+				//qube.Draw(ourShader);
 			}
 			else {
 				baloon_cooldowns[i] -= 1;
@@ -402,24 +414,65 @@ int GameApp::run_game() {
 
 
 		//zcube test
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 10.0f));
-		model = glm::scale(model, glm::vec3(1.0f));
-		ourShader.setMat4("model", model);
-		qube.Draw(ourShader);
+		//model = glm::mat4(1.0f);
+		//model = glm::translate(model, glm::vec3(0.0f, 0.0f, 10.0f));
+		//model = glm::scale(model, glm::vec3(1.0f));
+		//ourShader.setMat4("model", model);
+		//qube.Draw(ourShader);
 
 		//plane
-		glm::mat4 Planeview;
 		model = glm::mat4(1.0f);
-		
 		model = glm::translate(model, plane.Position);
 		model = glm::rotate(model, glm::radians(plane.Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::rotate(model, -glm::radians(plane.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
 		//Planeview = plane.GetViewMatrixWP()*model;
-		Planeview = glm::scale(model, glm::vec3(0.01f)); // Make it a smaller plane
-		ourShader.setMat4("model", Planeview);
+		model = glm::scale(model, glm::vec3(0.01f)); // Make it a smaller plane
+		ourShader.setMat4("model", model);
 		plane_model.Draw(ourShader);
 
+		//flame
+		glm::mat4 flame_model = glm::mat4(1.0f);
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, plane.Position);
+		
+		model = glm::translate(model, -plane.Front*0.65f);
+		model = glm::translate(model, plane.Up * 0.03f);
+		model = glm::scale(model, glm::vec3(0.01f));
+		model = glm::rotate(model, glm::radians(plane.Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, -glm::radians(plane.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		lightShader.use();
+		lightShader.setMat4("view", view);
+		lightShader.setMat4("projection", projection);
+		for (unsigned int i = 0; i < 100; i++) {
+			flame_lifecycle[i] += 0.01f;
+			if (flame_lifecycle[i] > flame_lifespan[i]) {
+				flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
+				flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
+				flame_lifespan[i] = randomFloatInRange(0.1f, 0.5f);
+			}
+			flame_model = glm::translate(model, flame_forwards[i] * flame_lifecycle[i]);
+			flame_model = glm::scale(flame_model, glm::vec3(0.8f));
+			lightShader.setMat4("model", flame_model);
+			light.Draw(lightShader);
+		}
+
+		//flame test
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f,1.0f,0.0f));
+		model = glm::scale(model, glm::vec3(0.05f));
+		for (unsigned int i = 0; i < 100; i++) {
+			flame_lifecycle[i] += 0.01f;
+			if (flame_lifecycle[i] > flame_lifespan[i]) {
+				flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
+				flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
+				flame_lifespan[i] = randomFloatInRange(0.1f, 0.5f);
+			}
+			flame_model = glm::translate(model, flame_forwards[i] * flame_lifecycle[i]);
+			flame_model = glm::scale(flame_model, glm::vec3(0.8f));
+			lightShader.setMat4("model", flame_model);
+			light.Draw(lightShader);
+		}
+		
 
 		/* Light */
 		// don't forget to use the corresponding shader program first (to set the uniform)
