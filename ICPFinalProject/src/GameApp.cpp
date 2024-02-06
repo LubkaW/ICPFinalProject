@@ -6,6 +6,10 @@
 #include <filesystem>
 #include "stb_image.h" // loading image textures library
 #include <random>
+#include <opencv2\opencv.hpp>
+#include <chrono>
+#include <thread>
+
 
 
 
@@ -52,7 +56,7 @@ float randomFloatInRange(float min, float max) {
 	return dis(gen);
 }
 
-bool areVectorsInRange(glm::vec3 vector1, glm::vec3 vector2 , float range) {
+bool areVectorsInRange(glm::vec3 vector1, glm::vec3 vector2, float range) {
 	double distanceSquared = 0.0;
 	for (int i = 0; i < 3; ++i) {
 		double diff = vector1[i] - vector2[i];
@@ -81,6 +85,109 @@ glm::vec3 getRotationsFromVectors(const glm::vec3& front, const glm::vec3& up) {
 	return glm::vec3(yaw, pitch, roll);
 }
 
+void GameApp::init_opencv()
+{
+	//open first available camera
+	capture = cv::VideoCapture(cv::CAP_DSHOW);
+
+	if (!capture.isOpened())
+	{
+		std::cerr << "no camera source? Fallback to video..." << std::endl;
+
+		//open video file
+		capture = cv::VideoCapture("resources/video.mkv");
+		if (!capture.isOpened())
+		{
+			std::cerr << "no source?... " << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
+{
+	// convert to grayscale, create threshold, sum white pixels
+	// compute centroid of white pixels (average X,Y coordinate of all white pixels)
+	cv::Point2f center;
+	cv::Point2f center_normalized;
+	double h_low = 80.0;
+	double s_low = 50.0;
+	double v_low = 50.0;
+
+	double h_hi = 100.0;
+	double s_hi = 255.0;
+	double v_hi = 255.0;
+
+	cv::Mat scene_hsv, scene_threshold;
+
+	cv::cvtColor(frame, scene_hsv, cv::COLOR_BGR2HSV);
+
+	cv::Scalar lower_threshold = cv::Scalar(h_low, s_low, v_low);
+	cv::Scalar upper_threshold = cv::Scalar(h_hi, s_hi, v_hi);
+	cv::inRange(scene_hsv, lower_threshold, upper_threshold, scene_threshold);
+
+	int sy = 0, sx = 0, s = 0;
+	for (int y = 0; y < frame.rows; y++) //y
+	{
+		for (int x = 0; x < frame.cols; x++) //x
+		{
+			// FIND THRESHOLD (value 0..255)
+			if (scene_threshold.at<unsigned char>(y, x) < 255) {
+				// set output pixel black
+
+			}
+			else {
+				// set output pixel white
+				sx += x;
+				sy += y;
+				s++;
+			}
+		}
+	}
+
+	center = cv::Point2f(sx / (float)s, sy / (float)s);
+	center_normalized = cv::Point2f(center.x / frame.cols, center.y / frame.rows);
+
+	//std::cout << "Center absolute: " << center << '\n';
+	//std::cout << "Center normalized: " << center_normalized << '\n';
+
+	return center_normalized;
+}
+
+
+void GameApp::thread_code(void)
+{
+	cv::Mat frame;
+
+	try {
+		while (true)
+		{
+			capture >> frame;
+
+			if (frame.empty())
+				throw std::exception("Empty file? Wrong path?");
+
+			//cv::Point2f center_normalized = find_center_normalized(frame);
+			cv::Point2f center_normalized = find_center_normalized_hsv(frame);
+
+			centre = center_normalized;
+			//fronta.push_back(center_normalized);
+
+			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+			if (koncime)
+			{
+				capture.release();
+				break;
+			}
+		}
+	}
+	catch (std::exception const& e) {
+		std::cerr << "App failed : " << e.what() << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 
 //constructor
 GameApp::GameApp() {
@@ -92,6 +199,7 @@ GameApp::GameApp() {
 // returns window object
 GLFWwindow* GameApp::game_init_window() {
 
+	init_opencv();
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -127,6 +235,7 @@ GLFWwindow* GameApp::game_init_window() {
 int GameApp::run_game() {
 
 	GLFWwindow* window = game_init_window();
+	std::thread vlakno(&GameApp::thread_code, this);
 
 	if (window == NULL)
 		return -1;
@@ -198,7 +307,7 @@ int GameApp::run_game() {
 		flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
 		flame_lifespan[i] = randomFloatInRange(0.1f, 0.5f);
 	}
-	
+
 
 	int baloon_cooldowns[] = { 0,0,0,0,0,0,0,0,0 };
 
@@ -224,7 +333,7 @@ int GameApp::run_game() {
 		// If a second has passed.
 		if (currentFrame - previousTime >= 1.0)
 		{
-			system("cls");
+			//system("cls");
 			// Display the frame count here any way you want.
 			std::cout << "FPS: " << frameCount << std::endl;
 			//std::cout << "Plane_pos: " << plane.Position[0]<< " " << plane.Position[1] << " " << plane.Position[2] << std::endl;
@@ -234,7 +343,7 @@ int GameApp::run_game() {
 			//std::cout << "PlaneFront: " << plane.Front[0] << "  " << plane.Front[1] << "  " << plane.Front[2] << "  " << std::endl;
 			//std::cout << "PlaneYPR: " << plane.Yaw << "  " << plane.Pitch << "  " << plane.Roll << "  " << std::endl;
 
-
+			std::cout << "Centre: " << centre << std::endl;
 
 			//std::cout << "CameraPosition: " << camera.Position[0] << "  " << camera.Position[1] << "  " << camera.Position[2] << "  " << std::endl;
 			//std::cout << "CameraFront: " << camera.Front[0] << "  " << camera.Front[1] << "  " << camera.Front[2] << "  " << std::endl;
@@ -252,18 +361,18 @@ int GameApp::run_game() {
 		//game
 		//movement
 		//camera.Position += camera.Front * camera.MovementSpeed * 0.01f;
-		plane.Position += plane.Front * plane.MovementSpeed*0.001f;
+		plane.Position += plane.Front * plane.MovementSpeed * 0.001f;
 
 
 		//colisions
 		for (unsigned int i = 0; i < 9; i++)
 		{
-			if (areVectorsInRange(plane.Position+plane.Front*0.1f, baloon_positions[i] , 0.3f)==true) {
+			if (areVectorsInRange(plane.Position + plane.Front * 0.1f, baloon_positions[i], 0.3f) == true) {
 				if (baloon_cooldowns[i] == 0) {
 					score += 1;
 					baloon_cooldowns[i] = 1000;
 				}
-				
+
 			}
 		}
 		if (plane.Position.y < 0) {
@@ -360,23 +469,23 @@ int GameApp::run_game() {
 		// 2. View matrix
 		// 
 		//far view
-		if(activeView==0){
+		if (activeView == 0) {
 			view = camera.GetViewMatrix();
 		}
 		//fixed 3rd person view
 		else if (activeView == 1) {
 			view = plane.GetViewMatrix() * view;
 			//view = glm::translate(view, -plane.Position);
-			view = glm::translate(view, plane.Front*1.5f);
+			view = glm::translate(view, plane.Front * 1.5f);
 			view = glm::translate(view, -plane.Up * 0.5f);
-			
+
 		}
 		//rotating 3rd person view
 		else if (activeView == 2) {
 			view = glm::lookAt(plane.Position - camera.Front * 1.0f, plane.Position, camera.Up) * view;
 		}
 		//
-		
+
 
 		// 3. Projection matrix
 		glm::mat4 projection = glm::mat4(1.0f);
@@ -391,7 +500,7 @@ int GameApp::run_game() {
 		// baloons
 		for (unsigned int i = 0; i < 9; i++)
 		{
-			if (baloon_cooldowns[i] == 0){
+			if (baloon_cooldowns[i] == 0) {
 				model = glm::mat4(1.0f);
 				model = glm::translate(model, baloon_positions[i]);
 				float angle = 20.0f * i;
@@ -402,7 +511,7 @@ int GameApp::run_game() {
 			else {
 				baloon_cooldowns[i] -= 1;
 			}
-			
+
 		}
 		//ground
 		model = glm::mat4(1.0f);
@@ -434,8 +543,8 @@ int GameApp::run_game() {
 		glm::mat4 flame_model = glm::mat4(1.0f);
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, plane.Position);
-		
-		model = glm::translate(model, -plane.Front*0.65f);
+
+		model = glm::translate(model, -plane.Front * 0.65f);
 		model = glm::translate(model, plane.Up * 0.03f);
 		model = glm::scale(model, glm::vec3(0.01f));
 		model = glm::rotate(model, glm::radians(plane.Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -458,7 +567,7 @@ int GameApp::run_game() {
 
 		//flame test
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f,1.0f,0.0f));
+		model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.05f));
 		for (unsigned int i = 0; i < 100; i++) {
 			flame_lifecycle[i] += 0.01f;
@@ -472,7 +581,7 @@ int GameApp::run_game() {
 			lightShader.setMat4("model", flame_model);
 			light.Draw(lightShader);
 		}
-		
+
 
 		/* Light */
 		// don't forget to use the corresponding shader program first (to set the uniform)
@@ -493,7 +602,8 @@ int GameApp::run_game() {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
+	koncime = true;
+	vlakno.join();
 	return 0;
 
 

@@ -5,12 +5,17 @@
 #include <glm/glm.hpp> // ibrary for math operations
 #include <glm/ext.hpp>
 
+#include <opencv2\opencv.hpp>
+
 #include "Camera.h"
 #include "Plane.h"
 
 class GameApp {
 
 public:
+	cv::Point2f find_center_normalized_hsv(cv::Mat& frame);
+
+	cv::Point2f centre;
 	// settings
 	const unsigned int SCR_WIDTH = 1920;
 	const unsigned int SCR_HEIGHT = 1080;
@@ -25,7 +30,7 @@ public:
 	float lastX = SCR_WIDTH / 2.0f;
 	float lastY = SCR_HEIGHT / 2.0f;
 	bool firstMouse = true;
-	Camera camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.0f,0.0f);
+	Camera camera = Camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f);
 
 	// plane(position/front/yaw/pitch)
 	Plane plane = Plane(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.0f, 0.0f);
@@ -43,5 +48,9 @@ public:
 private:
 	GLFWwindow* game_init_window();
 	void processInput(GLFWwindow* window);
-	
+	void thread_code(void);
+	void init_opencv();
+	cv::VideoCapture capture;
+	std::atomic<bool> koncime = false;
+
 };
