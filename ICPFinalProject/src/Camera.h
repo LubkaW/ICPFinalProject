@@ -13,11 +13,11 @@ enum Camera_Movement {
 };
 
 // Default camera values
-const float YAW = -90.0f;
+const float YAW = 0.0f;
 const float PITCH = 0.0f;
-const float SPEED = 2.5f;
+const float SPEED = 1.0f;//2.5
 const float SENSITIVITY = 0.1f;
-const float ZOOM = 45.0f;
+const float ZOOM = 100.0f;
 
 class Camera {
 
@@ -31,6 +31,7 @@ public:
     // euler Angles
     float Yaw;
     float Pitch;
+    float Roll;
     // camera options
     float MovementSpeed;
     float MouseSensitivity;
@@ -38,13 +39,15 @@ public:
 
 
     // constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
+    Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch);
 
     // Constructor with scalar values
-    Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch);
+    //Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch);
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix();
+
+    glm::mat4 GetViewMatrixWP();
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void ProcessKeyboard(Camera_Movement direction, float deltaTime);
@@ -62,4 +65,3 @@ private:
 
 
 };
-
