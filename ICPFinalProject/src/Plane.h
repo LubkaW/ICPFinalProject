@@ -27,8 +27,8 @@ public:
     float Pitch;
     float Roll;
     // camera options
-    float BaseSpeed = 8.0f;
-    float MovementSpeed = 8.0f;
+    float BaseSpeed = 32.0f;//for 60fps
+    float MovementSpeed = 32.0f;//for 60fps
 
 
 
@@ -44,13 +44,12 @@ public:
     void ProcessKeyboard(Plane_Movement direction, float deltaTime);
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true);
-
+    void updatePlaneVectors();
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 
 private:
     // calculates the front vector from the Camera's (updated) Euler Angles
-    void updatePlaneVectors();
+    //void updatePlaneVectors();
 
 
 };

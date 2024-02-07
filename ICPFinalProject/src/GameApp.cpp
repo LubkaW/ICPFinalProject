@@ -13,6 +13,7 @@
 
 
 
+
 #include "GameApp.h"
 #include "ShaderProgram.h"
 #include "Camera.h"
@@ -66,24 +67,24 @@ bool areVectorsInRange(glm::vec3 vector1, glm::vec3 vector2, float range) {
 	return distance <= range;
 }
 
-glm::vec3 getRotationsFromVectors(const glm::vec3& front, const glm::vec3& up) {
-	// Step 1: Normalize the vectors
-	glm::vec3 normalizedFront = glm::normalize(front);
-	glm::vec3 normalizedUp = glm::normalize(up);
-
-	// Step 2: Calculate the right vector
-	glm::vec3 right = glm::cross(normalizedUp, normalizedFront);
-
-	// Step 3: Calculate the angles
-	float yaw = atan2(normalizedFront.y, normalizedFront.x);
-	float pitch = atan2(-normalizedFront.z, sqrt(normalizedFront.x * normalizedFront.x + normalizedFront.y * normalizedFront.y));
-	float roll = atan2(right.z, normalizedUp.z);
-
-	std::cout << "Rotations: " << yaw << "  " << pitch << "  " << roll << "  " << std::endl;
-
-	// Return the rotations
-	return glm::vec3(yaw, pitch, roll);
-}
+//glm::vec3 getRotationsFromVectors(const glm::vec3& front, const glm::vec3& up) {
+//	// Step 1: Normalize the vectors
+//	glm::vec3 normalizedFront = glm::normalize(front);
+//	glm::vec3 normalizedUp = glm::normalize(up);
+//
+//	// Step 2: Calculate the right vector
+//	glm::vec3 right = glm::cross(normalizedUp, normalizedFront);
+//
+//	// Step 3: Calculate the angles
+//	float yaw = atan2(normalizedFront.y, normalizedFront.x);
+//	float pitch = atan2(-normalizedFront.z, sqrt(normalizedFront.x * normalizedFront.x + normalizedFront.y * normalizedFront.y));
+//	float roll = atan2(right.z, normalizedUp.z);
+//
+//	std::cout << "Rotations: " << yaw << "  " << pitch << "  " << roll << "  " << std::endl;
+//
+//	// Return the rotations
+//	return glm::vec3(yaw, pitch, roll);
+//}
 
 void GameApp::init_opencv()
 {
@@ -110,13 +111,22 @@ cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
 	// compute centroid of white pixels (average X,Y coordinate of all white pixels)
 	cv::Point2f center;
 	cv::Point2f center_normalized;
-	double h_low = 80.0;
+	//double h_low = 150.0;
+	//double s_low = 50.0;
+	//double v_low = 50.0;
+
+	//double h_hi = 180.0;
+	//double s_hi = 100.0;
+	//double v_hi = 100.0;
+
+	//lubosova plet
+	double h_low = 0.0;
 	double s_low = 50.0;
 	double v_low = 50.0;
 
-	double h_hi = 100.0;
-	double s_hi = 255.0;
-	double v_hi = 255.0;
+	double h_hi = 20.0;
+	double s_hi = 100.0;
+	double v_hi = 100.0;
 
 	cv::Mat scene_hsv, scene_threshold;
 
@@ -127,24 +137,19 @@ cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
 	cv::inRange(scene_hsv, lower_threshold, upper_threshold, scene_threshold);
 
 	int sy = 0, sx = 0, s = 0;
-	for (int y = 0; y < frame.rows; y++) //y
-	{
-		for (int x = 0; x < frame.cols; x++) //x
-		{
-			// FIND THRESHOLD (value 0..255)
+	for (int y = 0; y < frame.rows; y++){
+		for (int x = 0; x < frame.cols; x++){
 			if (scene_threshold.at<unsigned char>(y, x) < 255) {
-				// set output pixel black
 
 			}
 			else {
-				// set output pixel white
 				sx += x;
 				sy += y;
 				s++;
 			}
 		}
 	}
-
+	//cv::imshow("Frame", scene_threshold);
 	center = cv::Point2f(sx / (float)s, sy / (float)s);
 	center_normalized = cv::Point2f(center.x / frame.cols, center.y / frame.rows);
 
@@ -154,8 +159,24 @@ cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
 	return center_normalized;
 }
 
+void GameApp::draw_cross_normalized(cv::Mat& img, cv::Point2f center_normalized, int size)
+{
+	center_normalized.x = std::clamp(center_normalized.x, 0.0f, 1.0f);
+	center_normalized.y = std::clamp(center_normalized.y, 0.0f, 1.0f);
+	//size = std::clamp(size, 1, std::min(img.cols, img.rows));
 
-void GameApp::thread_code(void)
+	cv::Point2f center_absolute(center_normalized.x * img.cols, center_normalized.y * img.rows);
+
+	cv::Point2f p1(center_absolute.x - size / 2, center_absolute.y);
+	cv::Point2f p2(center_absolute.x + size / 2, center_absolute.y);
+	cv::Point2f p3(center_absolute.x, center_absolute.y - size / 2);
+	cv::Point2f p4(center_absolute.x, center_absolute.y + size / 2);
+
+	cv::line(img, p1, p2, CV_RGB(0, 255, 0), 3);
+	cv::line(img, p3, p4, CV_RGB(0, 255, 0), 3);
+}
+
+void GameApp::ObjectDetection(void)
 {
 	cv::Mat frame;
 
@@ -165,17 +186,28 @@ void GameApp::thread_code(void)
 			capture >> frame;
 
 			if (frame.empty())
-				throw std::exception("Empty file? Wrong path?");
+				if (GameEnd)
+				{
+					capture.release();
+					break;
+				}
+				continue;
 
-			//cv::Point2f center_normalized = find_center_normalized(frame);
+			cv::namedWindow("Frame"); // Create a window
+
 			cv::Point2f center_normalized = find_center_normalized_hsv(frame);
 
+			draw_cross_normalized(frame, center_normalized, 20);
+
+			cv::imshow("Frame", frame); // Show our image inside the created window.
+
+			cv::waitKey(100); // Wait for any keystroke in the window
+
 			centre = center_normalized;
-			//fronta.push_back(center_normalized);
 
 			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-			if (koncime)
+			if (GameEnd)
 			{
 				capture.release();
 				break;
@@ -218,7 +250,7 @@ GLFWwindow* GameApp::game_init_window() {
 	glfwSetWindowUserPointer(window, this);
 	glfwMakeContextCurrent(window);
 	//Vsync 0-off 1-on
-	glfwSwapInterval(1);
+	glfwSwapInterval(0);
 	// some window setups
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // hide cursor
 
@@ -235,7 +267,7 @@ GLFWwindow* GameApp::game_init_window() {
 int GameApp::run_game() {
 
 	GLFWwindow* window = game_init_window();
-	std::thread vlakno(&GameApp::thread_code, this);
+	std::thread DetectionThread(&GameApp::ObjectDetection, this);
 
 	if (window == NULL)
 		return -1;
@@ -270,7 +302,10 @@ int GameApp::run_game() {
 
 	// load models
 	// -----------
-	Model plane_model = Model("resources/objects/plane/My_plane_z.obj");
+	Model plane_model = Model("resources/objects/plane/Moje_letadlo_bez_vrtule.obj");
+	Model rotor_model = Model("resources/objects/plane/Moje_letadlo_vrtule.obj");
+	Model bomb_model = Model("resources/objects/bomb/bomba.obj");
+	Model coin_model = Model("resources/objects/coin/mince.obj");
 	Model ground = Model("resources/objects/ground/ground.obj");
 	//Model ourModel = Model("resources/objects/honey_jar/honey_jar.obj");
 	Model qube = Model("resources/objects/cube_textured/cube_textured_opengl.obj");
@@ -278,6 +313,7 @@ int GameApp::run_game() {
 	Model light = Model("resources/objects/cube/cube_triangles_normals_tex.obj");
 	/* MAIN PROGRAM LOOP */
 	double previousTime = glfwGetTime();
+	double previousTick = glfwGetTime();
 	int frameCount = 0;
 
 	//light position
@@ -285,17 +321,26 @@ int GameApp::run_game() {
 	glm::vec3 objectColor(1.0f, 0.5f, 0.31f);
 
 	//baloon positions (right,up,backward)
-	glm::vec3 baloon_positions[] = {
-	glm::vec3(randomFloatInRange(-5.0f,-2.0f),  randomFloatInRange(0.0f,3.0f),randomFloatInRange(-5.0f,-2.0f)),
-	glm::vec3(randomFloatInRange(-5.0f,-2.0f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(-1.5f,1.5f)),
-	glm::vec3(randomFloatInRange(-5.0f,-2.0f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(2.0f,5.0f)),
-	glm::vec3(randomFloatInRange(-1.5f,1.5f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(-5.0f,-2.0f)),
-	glm::vec3(randomFloatInRange(-1.5f,1.5f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(-1.5f,1.5f)),
-	glm::vec3(randomFloatInRange(-1.5f,1.5f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(2.0f,5.0f)),
-	glm::vec3(randomFloatInRange(2.0f,5.0f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(-5.0f,-2.0f)),
-	glm::vec3(randomFloatInRange(2.0f,5.0f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(-1.5f,1.5f)),
-	glm::vec3(randomFloatInRange(2.0f,5.0f),   randomFloatInRange(0.0f,3.0f),randomFloatInRange(2.0f,5.0f)),
+
+
+
+
+	glm::vec3 coin_positions[] = {
+	glm::vec3(randomFloatInRange(-5.0f,-2.0f),  randomFloatInRange(0.2f,3.0f),randomFloatInRange(-5.0f,-2.0f)),
+	glm::vec3(randomFloatInRange(-5.0f,-2.0f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(-1.5f,1.5f)),
+	glm::vec3(randomFloatInRange(-5.0f,-2.0f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(2.0f,5.0f)),
+	glm::vec3(randomFloatInRange(-1.5f,1.5f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(-5.0f,-2.0f)),
+	glm::vec3(randomFloatInRange(-1.5f,1.5f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(-1.5f,1.5f)),
+	glm::vec3(randomFloatInRange(-1.5f,1.5f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(2.0f,5.0f)),
+	glm::vec3(randomFloatInRange(2.0f,5.0f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(-5.0f,-2.0f)),
+	glm::vec3(randomFloatInRange(2.0f,5.0f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(-1.5f,1.5f)),
+	glm::vec3(randomFloatInRange(2.0f,5.0f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(2.0f,5.0f)),
 	};
+
+	glm::vec3 bombs[99];
+	for (unsigned int i = 0; i < 99; i++) {
+		bombs[i] = glm::vec3(randomFloatInRange(-5.0f, 5.0f), randomFloatInRange(0.5f, 3.0f), randomFloatInRange(-5.0f, 5.0f));
+	}
 
 	glm::vec3 flame_forwards[100];
 	float flame_lifecycle[100];
@@ -309,8 +354,20 @@ int GameApp::run_game() {
 	}
 
 
-	int baloon_cooldowns[] = { 0,0,0,0,0,0,0,0,0 };
-
+	int coin_cooldowns[] = { 0,0,0,0,0,0,0,0,0 };
+	float coin_angles[] = { 
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+		randomFloatInRange(0.0f, 360.0f),
+	};
+	float coin_angle = 0.0f;
+	float rotor_angle = 0.0f;
 
 	glm::vec3 pointLightPositions[] = {
 	glm::vec3(0.7f,  0.2f,  2.0f),
@@ -333,7 +390,7 @@ int GameApp::run_game() {
 		// If a second has passed.
 		if (currentFrame - previousTime >= 1.0)
 		{
-			//system("cls");
+			system("cls");
 			// Display the frame count here any way you want.
 			std::cout << "FPS: " << frameCount << std::endl;
 			//std::cout << "Plane_pos: " << plane.Position[0]<< " " << plane.Position[1] << " " << plane.Position[2] << std::endl;
@@ -343,38 +400,88 @@ int GameApp::run_game() {
 			//std::cout << "PlaneFront: " << plane.Front[0] << "  " << plane.Front[1] << "  " << plane.Front[2] << "  " << std::endl;
 			//std::cout << "PlaneYPR: " << plane.Yaw << "  " << plane.Pitch << "  " << plane.Roll << "  " << std::endl;
 
-			std::cout << "Centre: " << centre << std::endl;
+			std::cout << "Tracking: " << centre << std::endl;
+
 
 			//std::cout << "CameraPosition: " << camera.Position[0] << "  " << camera.Position[1] << "  " << camera.Position[2] << "  " << std::endl;
 			//std::cout << "CameraFront: " << camera.Front[0] << "  " << camera.Front[1] << "  " << camera.Front[2] << "  " << std::endl;
 			//std::cout << "CameraYPR: " << camera.Yaw << "  " << camera.Pitch << "  " << camera.Roll << "  " << std::endl;
 
+			
 
 			frameCount = 0;
 			previousTime = currentFrame;
 		}
+		//game tick 60hz
+		if (currentFrame - previousTick >= 0.016) {
+			if (controllMode == 1) {
+				plane.Yaw -= (centre.x - 0.5f) * 2.0f;
+				plane.Pitch -= (centre.y - 0.5f) * 2.0f;
+				plane.updatePlaneVectors();
+			}
+			//movement
+			plane.Position += plane.Front * plane.MovementSpeed * 0.001f;
 
+			//baloon cooldowns
+			for (unsigned int i = 0; i < 9; i++)
+			{
+				if (coin_cooldowns[i] > 0) {
+					coin_cooldowns[i] -= 1;
+				}
+			}
+			//flame
+			for (unsigned int i = 0; i < 100; i++) {
+				flame_lifecycle[i] += 0.03f;
+			}
+
+
+			if (coin_angle > 360.0f) {
+				coin_angle -= 360.f;
+			}
+			else {
+				coin_angle += 1.0f;
+			}
+
+			if (rotor_angle > 360.0f) {
+				rotor_angle -= 360.f;
+			}
+			else {
+				rotor_angle += 25.0f;
+			}
+
+			previousTick = currentFrame;
+		}
 		// check keyboard inputs
 		processInput(window);
 
-
-		//game
-		//movement
-		//camera.Position += camera.Front * camera.MovementSpeed * 0.01f;
-		plane.Position += plane.Front * plane.MovementSpeed * 0.001f;
+		
+		
 
 
 		//colisions
+
+		//coins
 		for (unsigned int i = 0; i < 9; i++)
 		{
-			if (areVectorsInRange(plane.Position + plane.Front * 0.1f, baloon_positions[i], 0.3f) == true) {
-				if (baloon_cooldowns[i] == 0) {
+			if (areVectorsInRange(plane.Position + plane.Front * 0.1f, coin_positions[i], 0.3f) == true) {
+				if (coin_cooldowns[i] == 0) {
+					coin_positions[i] = glm::vec3(randomFloatInRange(-5.0f, 5.0f), randomFloatInRange(0.0f, 3.0f), randomFloatInRange(-5.0f, 5.0f)),
 					score += 1;
-					baloon_cooldowns[i] = 1000;
+					coin_cooldowns[i] = 600;
 				}
 
 			}
 		}
+		//bombs
+		for (int i = 0; i < int(score / 2); i++)
+		{
+			if (areVectorsInRange(plane.Position + plane.Front * 0.2f, bombs[i], 0.6f) == true) {
+				std::cout << "Boom, to byla bomba... Finalni skore: " << score << std::endl;
+				glfwSetWindowShouldClose(window, true);
+			}
+		}
+
+		//ground
 		if (plane.Position.y < 0) {
 			std::cout << "Boom, havaroval jsi... Finalni skore: " << score << std::endl;
 			glfwSetWindowShouldClose(window, true);
@@ -497,26 +604,24 @@ int GameApp::run_game() {
 		/* TRANSOFRAMTION */
 
 		glm::mat4 model = glm::mat4(1.0f);
-		// baloons
+		// coins
 		for (unsigned int i = 0; i < 9; i++)
 		{
-			if (baloon_cooldowns[i] == 0) {
+			if (coin_cooldowns[i] == 0) {
 				model = glm::mat4(1.0f);
-				model = glm::translate(model, baloon_positions[i]);
-				float angle = 20.0f * i;
-				model = glm::scale(model, glm::vec3(0.1f)); // Make it a smaller plane
+				model = glm::translate(model, coin_positions[i]);
+				model = glm::rotate(model, glm::radians(coin_angles[i]+coin_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::scale(model, glm::vec3(0.001f));
 				ourShader.setMat4("model", model);
-				//qube.Draw(ourShader);
-			}
-			else {
-				baloon_cooldowns[i] -= 1;
+				coin_model.Draw(ourShader);
 			}
 
 		}
+
+
 		//ground
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.0f));
-		//model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(10.0f)); // Make it a smaller plane
 		ourShader.setMat4("model", model);
 		ground.Draw(ourShader);
@@ -534,26 +639,59 @@ int GameApp::run_game() {
 		model = glm::translate(model, plane.Position);
 		model = glm::rotate(model, glm::radians(plane.Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::rotate(model, -glm::radians(plane.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-		//Planeview = plane.GetViewMatrixWP()*model;
 		model = glm::scale(model, glm::vec3(0.01f)); // Make it a smaller plane
 		ourShader.setMat4("model", model);
 		plane_model.Draw(ourShader);
 
+		//rotor
+		model = glm::mat4(1.0f);
+		
+		model = glm::translate(model, plane.Position);
+		//for old model
+		//model = glm::translate(model, -plane.Front * 0.65f);
+		//model = glm::translate(model, plane.Up * 0.03f);
+		//for new model
+		model = glm::translate(model, plane.Front * 0.3f);
+		model = glm::translate(model, -plane.Up * 0.00f);
+		model = glm::translate(model, -plane.Right * 0.00f);
+		model = glm::scale(model, glm::vec3(0.01f));
+		model = glm::rotate(model, glm::radians(plane.Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, -glm::radians(plane.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(rotor_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+		ourShader.setMat4("model", model);
+		rotor_model.Draw(ourShader);
+
+
+		//bombs
+		for (int i = 0; i < int(score / 2); i++)
+		{
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, bombs[i]);
+			model = glm::scale(model, glm::vec3(0.001f));
+			ourShader.setMat4("model", model);
+			bomb_model.Draw(ourShader);
+
+		}
+		lightShader.use();
+		lightShader.setMat4("view", view);
+		lightShader.setMat4("projection", projection);
 		//flame
 		glm::mat4 flame_model = glm::mat4(1.0f);
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, plane.Position);
+		//for old model
+		//model = glm::translate(model, -plane.Front * 0.65f);
+		//model = glm::translate(model, plane.Up * 0.03f);
+		
+		//for new model
+		model = glm::translate(model, -plane.Front * 0.6f);
+		model = glm::translate(model, -plane.Up * 0.02f);
+		model = glm::translate(model, -plane.Right * 0.00f);
 
-		model = glm::translate(model, -plane.Front * 0.65f);
-		model = glm::translate(model, plane.Up * 0.03f);
 		model = glm::scale(model, glm::vec3(0.01f));
 		model = glm::rotate(model, glm::radians(plane.Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::rotate(model, -glm::radians(plane.Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
-		lightShader.use();
-		lightShader.setMat4("view", view);
-		lightShader.setMat4("projection", projection);
 		for (unsigned int i = 0; i < 100; i++) {
-			flame_lifecycle[i] += 0.01f;
 			if (flame_lifecycle[i] > flame_lifespan[i]) {
 				flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
 				flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
@@ -570,7 +708,6 @@ int GameApp::run_game() {
 		model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.05f));
 		for (unsigned int i = 0; i < 100; i++) {
-			flame_lifecycle[i] += 0.01f;
 			if (flame_lifecycle[i] > flame_lifespan[i]) {
 				flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
 				flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
@@ -589,21 +726,21 @@ int GameApp::run_game() {
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
 
-		for (unsigned int i = 0; i < 4; i++)
-		{
-			model = glm::mat4(1.0f);
-			model = glm::translate(model, pointLightPositions[i]);
-			model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-			lightShader.setMat4("model", model);
-			light.Draw(lightShader);
-		}
+		//for (unsigned int i = 0; i < 4; i++)
+		//{
+		//	model = glm::mat4(1.0f);
+		//	model = glm::translate(model, pointLightPositions[i]);
+		//	model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
+		//	lightShader.setMat4("model", model);
+		//	light.Draw(lightShader);
+		//}
 
 		// check and call events and swap the buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-	koncime = true;
-	vlakno.join();
+	GameEnd = true;
+	DetectionThread.join();
 	return 0;
 
 
@@ -650,6 +787,14 @@ void GameApp::processInput(GLFWwindow* window)
 		activeView = 1;
 	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
 		activeView = 2;
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+		glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080,60);
+	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS)
+		glfwSetWindowMonitor(window, nullptr, 100, 100, 1024, 576, 60);
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+		controllMode = 1;
+	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+		controllMode = 0;
 
 }
 

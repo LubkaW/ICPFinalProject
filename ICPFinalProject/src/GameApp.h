@@ -14,6 +14,8 @@ class GameApp {
 
 public:
 	cv::Point2f find_center_normalized_hsv(cv::Mat& frame);
+	void draw_cross_normalized(cv::Mat& img, cv::Point2f center_relative, int size);
+
 
 	cv::Point2f centre;
 	// settings
@@ -24,7 +26,8 @@ public:
 	float deltaTime = 0.0f;	// Time between current frame and last frame
 	float lastFrame = 0.0f; // Time of last frame
 	int score = 0;
-	int activeView = 0;
+	int activeView = 1;
+	int controllMode = 0; //0=arrows,1=tracking
 
 	// camera
 	float lastX = SCR_WIDTH / 2.0f;
@@ -48,9 +51,9 @@ public:
 private:
 	GLFWwindow* game_init_window();
 	void processInput(GLFWwindow* window);
-	void thread_code(void);
+	void ObjectDetection(void);
 	void init_opencv();
 	cv::VideoCapture capture;
-	std::atomic<bool> koncime = false;
+	std::atomic<bool> GameEnd = false;
 
 };
