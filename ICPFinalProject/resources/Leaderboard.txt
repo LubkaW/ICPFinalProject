@@ -1,0 +1,4 @@
+Datum:		 Kdo:  		Skore:   	Mode:
+
+9.2.24 		 Tomas 		90			Combined
+9.2.24 		 Tomas 		22			Ground

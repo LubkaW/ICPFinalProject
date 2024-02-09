@@ -1,0 +1,66 @@
+
+newmtl CartoonDC2B10
+Kd  0.8627451 0.1686275 0.0627451
+Ks  0 0 0
+Ka  0 0 0
+d  1
+Ns  0
+illum 2
+
+
+
+
+newmtl Glossy737373
+Kd  0.4509804 0.4509804 0.4509804
+Ks  0 0 0
+Ka  0 0 0
+d  1
+Ns  0
+illum 2
+
+
+
+
+newmtl FlatE8FFFE
+Kd  0.9098039 1 0.9960784
+Ks  0 0 0
+Ka  0 0 0
+d  1
+Ns  0
+illum 0
+
+
+
+
+newmtl FlatEC764D
+Kd  0.9254902 0.4627451 0.3019608
+Ks  0 0 0
+Ka  0 0 0
+d  1
+Ns  0
+illum 0
+
+
+
+
+newmtl Flat161616
+Kd  0.08627451 0.08627451 0.08627451
+Ks  0 0 0
+Ka  0 0 0
+d  1
+Ns  0
+illum 0
+
+
+
+
+newmtl FlatB76D1C
+Kd  0.7176471 0.427451 0.1098039
+Ks  0 0 0
+Ka  0 0 0
+d  1
+Ns  0
+illum 0
+
+
+
