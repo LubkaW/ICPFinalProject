@@ -1,6 +1,9 @@
 # Blender v2.78 (sub 0) OBJ File: ''
 # www.blender.org
-o Plane_Plane.001
+
+mtllib ./ground.mtl
+usemap Standard1B1E4C
+usemtl Standard1B1E4C
 v -5.000000 0.000000 5.000000
 v 5.000000 0.000000 5.000000
 v -5.000000 0.000000 -5.000000

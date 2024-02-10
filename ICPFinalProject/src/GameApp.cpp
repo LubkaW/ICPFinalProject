@@ -307,8 +307,9 @@ int GameApp::run_game() {
 	Model bomb_model = Model("resources/objects/bomb/bomba.obj");
 	Model coin_model = Model("resources/objects/coin/mince.obj");
 	Model ground = Model("resources/objects/ground/ground.obj");
-	Model ourModel = Model("resources/objects/backpack/backpack.obj");
-	//Model qube = Model("resources/objects/cube_textured/cube_textured_opengl.obj");
+	//Model ourModel = Model("resources/objects/backpack/backpack.obj");
+	Model qube = Model("resources/objects/cube_textured/cube_textured_opengl.obj");
+	Model skybox = Model("resources/objects/skybox/skybox.obj");
 	//Model qube = Model("resources/objects/wooden_map/Wooden.obj");
 	Model light = Model("resources/objects/cube/cube_triangles_normals_tex.obj");
 
@@ -399,7 +400,7 @@ int GameApp::run_game() {
 			std::cout << "FPS: " << frameCount << std::endl;
 
 			std::cout << "Ovladani: Kamera: Mys a WSAD  ,, Letadlo: sipky" << std::endl;
-			std::cout << "1:pohled ze zeme   2:fixní pohled ze 3.osoby  3:rotacni pohled ze treti osoby" << std::endl;
+			std::cout << "1:pohled ze zeme   2:fixni pohled ze 3.osoby  3:rotacni pohled ze treti osoby" << std::endl;
 			std::cout << "T/U:zapnuti/vypnuti ovladani kamerou" << std::endl;
 			std::cout << "F/V:fulscreen/windowed" << std::endl << std::endl;
 
@@ -458,7 +459,39 @@ int GameApp::run_game() {
 			else {
 				rotor_angle += 25.0f;
 			}
+			//colisions
 
+			//coins
+			for (unsigned int i = 0; i < 9; i++)
+			{
+				if (areVectorsInRange(plane.Position + plane.Front * 0.3f, coin_positions[i], 0.5f) == true) {
+					if (coin_cooldowns[i] == 0) {
+						coin_positions[i] = glm::vec3(randomFloatInRange(-5.0f, 5.0f), randomFloatInRange(0.0f, 3.0f), randomFloatInRange(-5.0f, 5.0f)),
+							score += 1;
+						coin_cooldowns[i] = 600;
+					}
+
+				}
+			}
+			//bombs
+			for (int i = 0; i < int(score / 2); i++)
+			{
+				if (areVectorsInRange(plane.Position + plane.Front * 0.3f, bombs[i], 0.6f) == true) {
+					std::cout << "Boom, to byla bomba... Finalni skore: " << score << std::endl;
+					glfwSetWindowShouldClose(window, true);
+				}
+			}
+
+			//ground
+			if (plane.Position.y < 0) {
+				std::cout << "Boom, havaroval jsi... Finalni skore: " << score << std::endl;
+				glfwSetWindowShouldClose(window, true);
+			}
+			//skybox
+			if (areVectorsInRange(plane.Position + plane.Front * 0.5f, glm::vec3(0.0f, 0.0f, 0.0f), 10.0f) == false) {
+				std::cout << "Boom, mapa neni nekonecna... Finalni skore: " << score << std::endl << std::endl << std::endl;
+				glfwSetWindowShouldClose(window, true);
+			}
 			previousTick = currentFrame;
 		}
 		// check keyboard inputs
@@ -468,34 +501,7 @@ int GameApp::run_game() {
 		
 
 
-		//colisions
-
-		//coins
-		for (unsigned int i = 0; i < 9; i++)
-		{
-			if (areVectorsInRange(plane.Position + plane.Front * 0.3f, coin_positions[i], 0.5f) == true) {
-				if (coin_cooldowns[i] == 0) {
-					coin_positions[i] = glm::vec3(randomFloatInRange(-5.0f, 5.0f), randomFloatInRange(0.0f, 3.0f), randomFloatInRange(-5.0f, 5.0f)),
-					score += 1;
-					coin_cooldowns[i] = 600;
-				}
-
-			}
-		}
-		//bombs
-		for (int i = 0; i < int(score / 2); i++)
-		{
-			if (areVectorsInRange(plane.Position + plane.Front * 0.2f, bombs[i], 0.6f) == true) {
-				std::cout << "Boom, to byla bomba... Finalni skore: " << score << std::endl;
-				glfwSetWindowShouldClose(window, true);
-			}
-		}
-
-		//ground
-		if (plane.Position.y < 0) {
-			std::cout << "Boom, havaroval jsi... Finalni skore: " << score << std::endl;
-			glfwSetWindowShouldClose(window, true);
-		}
+		
 
 
 
@@ -632,9 +638,15 @@ int GameApp::run_game() {
 		//ground
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.0f));
-		model = glm::scale(model, glm::vec3(10.0f)); // Make it a smaller plane
+		model = glm::scale(model, glm::vec3(10.0f));
 		ourShader.setMat4("model", model);
 		ground.Draw(ourShader);
+
+		//skybox
+		model = glm::mat4(1.0f);
+		model = glm::scale(model, glm::vec3(10.0f));
+		ourShader.setMat4("model", model);
+		skybox.Draw(ourShader);
 
 
 		//zcube test

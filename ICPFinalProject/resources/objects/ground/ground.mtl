@@ -1,0 +1,8 @@
+newmtl Standard1B1E4C
+Kd  0.1058824 0.1176471 0.2980392
+Ks  0 0 0
+Ka  0 0 0
+d  1
+Ns  0
+illum 2
+map_Kd GroundColor.png

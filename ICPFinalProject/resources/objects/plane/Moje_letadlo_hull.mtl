@@ -6,7 +6,7 @@ Ka  0 0 0
 d  1
 Ns  0
 illum 2
-
+map_Kd HullColor1.png
 
 
 
@@ -17,6 +17,7 @@ Ka  0 0 0
 d  1
 Ns  0
 illum 2
+map_Kd HullColor2.png
 
 
 
@@ -28,6 +29,7 @@ Ka  0 0 0
 d  1
 Ns  0
 illum 0
+map_Kd HullColor3.png
 
 
 
@@ -39,6 +41,7 @@ Ka  0 0 0
 d  1
 Ns  0
 illum 0
+map_Kd HullColor4.png
 
 
 
@@ -50,6 +53,7 @@ Ka  0 0 0
 d  1
 Ns  0
 illum 0
+map_Kd HullColor5.png
 
 
 
@@ -61,6 +65,7 @@ Ka  0 0 0
 d  1
 Ns  0
 illum 0
+map_Kd HullColor6.png
 
 
 
