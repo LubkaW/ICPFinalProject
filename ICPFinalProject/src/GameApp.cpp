@@ -205,8 +205,6 @@ void GameApp::ObjectDetection(void)
 
 			centre = center_normalized;
 
-			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
 			if (GameEnd)
 			{
 				capture.release();
@@ -302,15 +300,10 @@ int GameApp::run_game() {
 
 	// load models
 	// -----------
-	//Model plane_model = Model("resources/objects/plane/Moje_letadlo_bez_vrtule.obj");
-	//Model rotor_model = Model("resources/objects/plane/Moje_letadlo_vrtule.obj");
 	Model bomb_model = Model("resources/objects/bomb/bomba.obj");
 	Model coin_model = Model("resources/objects/coin/mince.obj");
 	Model ground = Model("resources/objects/ground/ground.obj");
-	//Model ourModel = Model("resources/objects/backpack/backpack.obj");
-	Model qube = Model("resources/objects/cube_textured/cube_textured_opengl.obj");
 	Model skybox = Model("resources/objects/skybox/skybox.obj");
-	//Model qube = Model("resources/objects/wooden_map/Wooden.obj");
 	Model light = Model("resources/objects/cube/cube_triangles_normals_tex.obj");
 
 	Model hull = Model("resources/objects/plane/Moje_letadlo_hull.obj");
@@ -321,15 +314,8 @@ int GameApp::run_game() {
 	double previousTick = glfwGetTime();
 	int frameCount = 0;
 
-	//light position
-	glm::vec3 lightPos(-0.2f, -1.0f, -0.3f);
-	glm::vec3 objectColor(1.0f, 0.5f, 0.31f);
 
-	//baloon positions (right,up,backward)
-
-
-
-
+	//coin positions (right,up,backward)
 	glm::vec3 coin_positions[] = {
 	glm::vec3(randomFloatInRange(-5.0f,-2.0f),  randomFloatInRange(0.2f,3.0f),randomFloatInRange(-5.0f,-2.0f)),
 	glm::vec3(randomFloatInRange(-5.0f,-2.0f),   randomFloatInRange(0.2f,3.0f),randomFloatInRange(-1.5f,1.5f)),
@@ -347,11 +333,10 @@ int GameApp::run_game() {
 		bombs[i] = glm::vec3(randomFloatInRange(-5.0f, 5.0f), randomFloatInRange(0.5f, 3.0f), randomFloatInRange(-5.0f, 5.0f));
 	}
 
+	//flame particles
 	glm::vec3 flame_forwards[100];
 	float flame_lifecycle[100];
 	float flame_lifespan[100];
-
-
 	for (unsigned int i = 0; i < 100; i++) {
 		flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
 		flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
@@ -403,23 +388,8 @@ int GameApp::run_game() {
 			std::cout << "1:pohled ze zeme   2:fixni pohled ze 3.osoby  3:rotacni pohled ze treti osoby" << std::endl;
 			std::cout << "T/U:zapnuti/vypnuti ovladani kamerou" << std::endl;
 			std::cout << "F/V:fulscreen/windowed" << std::endl << std::endl;
-
-			//std::cout << "Plane_pos: " << plane.Position[0]<< " " << plane.Position[1] << " " << plane.Position[2] << std::endl;
-			//std::cout << "Forward_pos: " << plane.Front[0] << " " << plane.Front[1] << " " << plane.Front[2] << std::endl;
 			std::cout << "Score: " << score << std::endl;
-			//std::cout << "PlanePosition: " << plane.Position[0] << "  " << plane.Position[1] << "  " << plane.Position[2] << "  " << std::endl;
-			//std::cout << "PlaneFront: " << plane.Front[0] << "  " << plane.Front[1] << "  " << plane.Front[2] << "  " << std::endl;
-			//std::cout << "PlaneYPR: " << plane.Yaw << "  " << plane.Pitch << "  " << plane.Roll << "  " << std::endl;
-
 			std::cout << "Tracking: " << centre << std::endl;
-
-
-			//std::cout << "CameraPosition: " << camera.Position[0] << "  " << camera.Position[1] << "  " << camera.Position[2] << "  " << std::endl;
-			//std::cout << "CameraFront: " << camera.Front[0] << "  " << camera.Front[1] << "  " << camera.Front[2] << "  " << std::endl;
-			//std::cout << "CameraYPR: " << camera.Yaw << "  " << camera.Pitch << "  " << camera.Roll << "  " << std::endl;
-
-			
-
 			frameCount = 0;
 			previousTime = currentFrame;
 		}
@@ -428,7 +398,12 @@ int GameApp::run_game() {
 			if (controllMode == 1) {
 				plane.Yaw -= (centre.x - 0.5f) * 2.0f;
 				plane.Pitch -= (centre.y - 0.5f) * 2.0f;
+				if (plane.Yaw > 360) plane.Yaw -= 360;
+				if (plane.Yaw < 0) plane.Yaw += 360;
+				if (plane.Pitch > 89.0f) plane.Pitch = 89.0f;
+				if (plane.Pitch < -89.0f) plane.Pitch = -89.0f;
 				plane.updatePlaneVectors();
+				
 			}
 			//movement
 			plane.Position += plane.Front * plane.MovementSpeed * 0.001f;
@@ -516,9 +491,9 @@ int GameApp::run_game() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// light setup color
-		glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
-		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
+		glm::vec3 lightColor(1.0f, 0.0f, 0.0f);
+		glm::vec3 diffuseColor(0.5f, 0.5f, 0.5f);
+		glm::vec3 ambientColor(0.1f, 0.1f, 0.1f);
 
 
 		// don't forget to enable shader before setting uniforms
@@ -547,39 +522,40 @@ int GameApp::run_game() {
 		ourShader.setFloat("pointLights[0].linear", 0.09f);
 		ourShader.setFloat("pointLights[0].quadratic", 0.032f);
 		// point light 2
-		ourShader.setVec3("pointLights[1].position", pointLightPositions[1]);
-		ourShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
-		ourShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
-		ourShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
-		ourShader.setFloat("pointLights[1].constant", 1.0f);
-		ourShader.setFloat("pointLights[1].linear", 0.09f);
-		ourShader.setFloat("pointLights[1].quadratic", 0.032f);
-		// point light 3
-		ourShader.setVec3("pointLights[2].position", pointLightPositions[2]);
-		ourShader.setVec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
-		ourShader.setVec3("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f);
-		ourShader.setVec3("pointLights[2].specular", 1.0f, 1.0f, 1.0f);
-		ourShader.setFloat("pointLights[2].constant", 1.0f);
-		ourShader.setFloat("pointLights[2].linear", 0.09f);
-		ourShader.setFloat("pointLights[2].quadratic", 0.032f);
-		// point light 4
-		ourShader.setVec3("pointLights[3].position", pointLightPositions[3]);
-		ourShader.setVec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
-		ourShader.setVec3("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f);
-		ourShader.setVec3("pointLights[3].specular", 1.0f, 1.0f, 1.0f);
-		ourShader.setFloat("pointLights[3].constant", 1.0f);
-		ourShader.setFloat("pointLights[3].linear", 0.09f);
-		ourShader.setFloat("pointLights[3].quadratic", 0.032f);
+		//ourShader.setVec3("pointLights[1].position", pointLightPositions[1]);
+		//ourShader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
+		//ourShader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
+		//ourShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+		//ourShader.setFloat("pointLights[1].constant", 1.0f);
+		//ourShader.setFloat("pointLights[1].linear", 0.09f);
+		//ourShader.setFloat("pointLights[1].quadratic", 0.032f);
+		////// point light 3
+		//ourShader.setVec3("pointLights[2].position", pointLightPositions[2]);
+		//ourShader.setVec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
+		//ourShader.setVec3("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f);
+		//ourShader.setVec3("pointLights[2].specular", 1.0f, 1.0f, 1.0f);
+		//ourShader.setFloat("pointLights[2].constant", 1.0f);
+		//ourShader.setFloat("pointLights[2].linear", 0.09f);
+		//ourShader.setFloat("pointLights[2].quadratic", 0.032f);
+		////// point light 4
+		//ourShader.setVec3("pointLights[3].position", pointLightPositions[3]);
+		//ourShader.setVec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
+		//ourShader.setVec3("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f);
+		//ourShader.setVec3("pointLights[3].specular", 1.0f, 1.0f, 1.0f);
+		//ourShader.setFloat("pointLights[3].constant", 1.0f);
+		//ourShader.setFloat("pointLights[3].linear", 0.09f);
+		//ourShader.setFloat("pointLights[3].quadratic", 0.032f);
 		// Spotlight
-		ourShader.setVec3("spotLight.position", plane.Position);
+		glm::vec3 spotlight_position = plane.Position + plane.Front * 0.5f;
+		ourShader.setVec3("spotLight.position", spotlight_position);
 		ourShader.setVec3("spotLight.direction", plane.Front);
 		ourShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-		ourShader.setVec3("spotLight.diffuse", 0.5f, 0.5f, 0.5f);
+		ourShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
 		ourShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-		ourShader.setFloat("spotLight.constant", 1.0f);
-		ourShader.setFloat("spotLight.linear", 0.09f);
-		ourShader.setFloat("spotLight.quadratic", 0.032f);
-		ourShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+		ourShader.setFloat("spotLight.constant", 0.4f);
+		ourShader.setFloat("spotLight.linear", 0.0001f);
+		ourShader.setFloat("spotLight.quadratic", 0.0001f);
+		ourShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(10.0f)));
 		ourShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
 
 		/* Going 3D */

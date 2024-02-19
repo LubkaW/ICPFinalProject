@@ -32,18 +32,6 @@ void Plane::ProcessKeyboard(Plane_Movement direction, float deltaTime)
    
     if (Pitch > 89.0f) Pitch = 89.0f;
     if (Pitch < -89.0f) Pitch = -89.0f;
-    //rychhlost závislá na pitchi
-    if (Pitch < 0) {
-        MovementSpeed = BaseSpeed + BaseSpeed * -Pitch / 90.0f;
-    }
-    else if(Pitch >45){
-        MovementSpeed = BaseSpeed * 0.5;
-    }
-    else {
-        MovementSpeed = BaseSpeed - BaseSpeed * Pitch / 90.0f;
-    }
-    
-
     updatePlaneVectors();
 }
 
@@ -77,6 +65,16 @@ glm::mat4 Plane::GetViewMatrix()
 
 void Plane::updatePlaneVectors()
 {
+    //rychhlost závislá na pitchi
+    if (Pitch < 0) {
+        MovementSpeed = BaseSpeed + BaseSpeed * -Pitch / 90.0f;
+    }
+    else if (Pitch > 45) {
+        MovementSpeed = BaseSpeed * 0.5;
+    }
+    else {
+        MovementSpeed = BaseSpeed - BaseSpeed * Pitch / 90.0f;
+    }
     // calculate the new Front vector
     glm::vec3 front;
     front.x = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
