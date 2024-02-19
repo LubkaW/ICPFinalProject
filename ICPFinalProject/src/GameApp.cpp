@@ -570,6 +570,17 @@ int GameApp::run_game() {
 		ourShader.setFloat("pointLights[3].constant", 1.0f);
 		ourShader.setFloat("pointLights[3].linear", 0.09f);
 		ourShader.setFloat("pointLights[3].quadratic", 0.032f);
+		// Spotlight
+		ourShader.setVec3("spotLight.position", plane.Position);
+		ourShader.setVec3("spotLight.direction", plane.Front);
+		ourShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+		ourShader.setVec3("spotLight.diffuse", 0.5f, 0.5f, 0.5f);
+		ourShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+		ourShader.setFloat("spotLight.constant", 1.0f);
+		ourShader.setFloat("spotLight.linear", 0.09f);
+		ourShader.setFloat("spotLight.quadratic", 0.032f);
+		ourShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+		ourShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
 
 		/* Going 3D */
 
