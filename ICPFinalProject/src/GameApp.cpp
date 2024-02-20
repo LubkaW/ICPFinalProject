@@ -185,14 +185,14 @@ void GameApp::ObjectDetection(void)
 		{
 			capture >> frame;
 
-			if (frame.empty())
+			if (frame.empty()) {
 				if (GameEnd)
 				{
 					capture.release();
 					break;
 				}
 				continue;
-
+			}
 			cv::namedWindow("Frame"); // Create a window
 
 			cv::Point2f center_normalized = find_center_normalized_hsv(frame);
