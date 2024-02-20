@@ -120,11 +120,11 @@ cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
 	//double v_hi = 100.0;
 
 	//lubosova plet
-	double h_low = 0.0;
+	double h_low = 175.0;
 	double s_low = 50.0;
 	double v_low = 50.0;
 
-	double h_hi = 20.0;
+	double h_hi = 180.0;
 	double s_hi = 100.0;
 	double v_hi = 100.0;
 

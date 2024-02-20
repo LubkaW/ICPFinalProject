@@ -70,19 +70,19 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
 
     // define an output color value
-    vec3 output = vec3(0.0);
+    vec3 outik = vec3(0.0);
 
     // add the directional light's contribution to the output
-    output += CalcDirLight(dirLight, norm, viewDir);
+    outik += CalcDirLight(dirLight, norm, viewDir);
 
     // do the same for all point lights
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
-  	    output += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+  	    outik += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
 
     // you can implement: and add others lights as well (like spotlights)
-    output += CalcSpotLight(spotLight, norm, FragPos, viewDir); 
+    outik += CalcSpotLight(spotLight, norm, FragPos, viewDir); 
 
-    FragColor = vec4(output, 1.0);
+    FragColor = vec4(outik, 1.0);
 
     //FragColor = texture(texture_diffuse1, TexCoord);
 }
