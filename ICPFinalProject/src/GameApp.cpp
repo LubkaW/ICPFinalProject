@@ -362,6 +362,7 @@ int GameApp::run_game() {
 	float coin_angle = 0.0f;
 	float rotor_angle = 0.0f;
 
+	int NUM_OF_POINT_LIGHTS = 1;
 	glm::vec3 pointLightPositions[] = {
 	glm::vec3(0.7f,  0.2f,  2.0f),
 	glm::vec3(2.3f, -3.3f, -4.0f),
@@ -742,14 +743,13 @@ int GameApp::run_game() {
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
 
-		//for (unsigned int i = 0; i < 4; i++)
-		//{
-		//	model = glm::mat4(1.0f);
-		//	model = glm::translate(model, pointLightPositions[i]);
-		//	model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-		//	lightShader.setMat4("model", model);
-		//	light.Draw(lightShader);
-		//}
+		for (unsigned int i = 0; i < NUM_OF_POINT_LIGHTS; i++) {
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, pointLightPositions[i]);
+			model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
+			lightShader.setMat4("model", model);
+			light.Draw(lightShader);
+		}
 
 		// check and call events and swap the buffers
 		glfwSwapBuffers(window);
