@@ -96,7 +96,7 @@ void GameApp::init_opencv()
 		std::cerr << "no camera source? Fallback to video..." << std::endl;
 
 		//open video file
-		capture = cv::VideoCapture("resources/video.mkv");
+		capture = cv::VideoCapture("resources/letadlo.mp4");
 		if (!capture.isOpened())
 		{
 			std::cerr << "no source?... " << std::endl;
@@ -110,7 +110,7 @@ cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
 	// convert to grayscale, create threshold, sum white pixels
 	// compute centroid of white pixels (average X,Y coordinate of all white pixels)
 	cv::Point2f center;
-	cv::Point2f center_normalized;
+	cv::Point2f center_normalized = cv::Point2f(0.0f, 0.0f);
 	//double h_low = 150.0;
 	//double s_low = 50.0;
 	//double v_low = 50.0;
@@ -120,13 +120,13 @@ cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
 	//double v_hi = 100.0;
 
 	//lubosova plet
-	double h_low = 175.0;
-	double s_low = 50.0;
-	double v_low = 50.0;
+	double h_low = 170.0;
+	double s_low = 150.0;
+	double v_low = 150.0;
 
 	double h_hi = 180.0;
-	double s_hi = 100.0;
-	double v_hi = 100.0;
+	double s_hi = 255.0;
+	double v_hi = 250.0;
 
 	cv::Mat scene_hsv, scene_threshold;
 
@@ -149,7 +149,10 @@ cv::Point2f GameApp::find_center_normalized_hsv(cv::Mat& frame)
 			}
 		}
 	}
-	//cv::imshow("Frame", scene_threshold);
+	cv::imshow("Frame", scene_threshold);
+	if (s == 0) {
+		return center_normalized;
+	}
 	center = cv::Point2f(sx / (float)s, sy / (float)s);
 	center_normalized = cv::Point2f(center.x / frame.cols, center.y / frame.rows);
 
@@ -199,7 +202,7 @@ void GameApp::ObjectDetection(void)
 
 			draw_cross_normalized(frame, center_normalized, 20);
 
-			cv::imshow("Frame", frame); // Show our image inside the created window.
+			//cv::imshow("Frame", frame); // Show our image inside the created window.
 
 			cv::waitKey(100); // Wait for any keystroke in the window
 
@@ -390,14 +393,16 @@ int GameApp::run_game() {
 			std::cout << "F/V:fulscreen/windowed" << std::endl << std::endl;
 			std::cout << "Score: " << score << std::endl;
 			std::cout << "Tracking: " << centre << std::endl;
+			std::cout << "yaw: " << plane.Yaw << std::endl;
+			std::cout << "pitch: " << plane.Pitch << std::endl;
 			frameCount = 0;
 			previousTime = currentFrame;
 		}
 		//game tick 60hz
 		if (currentFrame - previousTick >= 0.016) {
 			if (controllMode == 1) {
-				plane.Yaw -= (centre.x - 0.5f) * 2.0f;
-				plane.Pitch -= (centre.y - 0.5f) * 2.0f;
+				plane.Yaw += (centre.x - 0.5f) * 2.0f;
+				plane.Pitch += (centre.y - 0.5f) * 2.0f;
 				if (plane.Yaw > 360) plane.Yaw -= 360;
 				if (plane.Yaw < 0) plane.Yaw += 360;
 				if (plane.Pitch > 89.0f) plane.Pitch = 89.0f;
@@ -734,7 +739,6 @@ int GameApp::run_game() {
 
 		/* Light */
 		// don't forget to use the corresponding shader program first (to set the uniform)
-		lightShader.use();
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
 
