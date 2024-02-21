@@ -1,13 +1,20 @@
 # ICPFinalProject
-Repository for final project of ICP
+Repozitář pro finální práci z předmětu ICP
 
 Instalace:
-1. Naklonuj repozitář
-2. Otevři .sln, a zkus run. (mělo by běžet hned po naklonování)
-3. Pokud nejde zkontrluj jestli máš nalikované všechny knihovny
+1. Naklonovat repozitář
+2. Mít v systémových prostředích nastavenou proměnnou %OPENCV_DIR%
+3. Mít nainstalovanné visual studio 2022
+4. Po otevření .sln a spuštění debug buildu by se měla aplikace hned bez problému spustit.
+Aplikace se z důvodů high polly modelů delší dobů načítá.
 
-Pár pravidel:
-1. Pokud nahráváš .obj, textury musí být ve stejné složce jako .obj a musí se upravit cesty v .mtl
-2. Nejdou nahrávat modely bez textur (pouze s materiály), muselo by se upravit, viz komentáře: https://learnopengl.com/Model-Loading/Model (zároveň super zdroj pro rady.
-3. Hlavní program je v GameApp.cpp, mělo by být jednoduché pochopit jak se loadují modely, umísťují do prostoru, atd..
-4. Pokud bude potřeba: vždy deklaruj metody a atributy tříd v .h, poté implementaci v .cpp
+Ovládání (zobrazuje se v CMD):
+
+- [WSAD] + myš -> kamera
+- [123] -> změna kamer
+- šipky -> letadlo
+- P -> pauza
+- O -> odpauza
+
+
+Cílem je sebrat co nejvíce mincí, aniž by se narazilo do stěnny, země nebo bomby :).
