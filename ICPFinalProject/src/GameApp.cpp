@@ -303,6 +303,7 @@ int GameApp::run_game() {
 
 	// load models
 	// -----------
+	Model textured_cube = Model("resources/objects/cube_textured/cube_textured_opengl.obj");
 	Model bomb_model = Model("resources/objects/bomb/bomba.obj");
 	Model coin_model = Model("resources/objects/coin/mince.obj");
 	Model ground = Model("resources/objects/ground/ground.obj");
@@ -364,7 +365,7 @@ int GameApp::run_game() {
 
 	int NUM_OF_POINT_LIGHTS = 1;
 	glm::vec3 pointLightPositions[] = {
-	glm::vec3(0.7f,  0.2f,  2.0f),
+	glm::vec3(0.7f,  1.7f,  2.0f),
 	glm::vec3(2.3f, -3.3f, -4.0f),
 	glm::vec3(-4.0f,  2.0f, -12.0f),
 	glm::vec3(0.0f,  0.0f, -3.0f)
@@ -394,8 +395,6 @@ int GameApp::run_game() {
 			std::cout << "F/V:fulscreen/windowed" << std::endl << std::endl;
 			std::cout << "Score: " << score << std::endl;
 			std::cout << "Tracking: " << centre << std::endl;
-			std::cout << "yaw: " << plane.Yaw << std::endl;
-			std::cout << "pitch: " << plane.Pitch << std::endl;
 			frameCount = 0;
 			previousTime = currentFrame;
 		}
@@ -636,6 +635,14 @@ int GameApp::run_game() {
 		model = glm::scale(model, glm::vec3(10.0f));
 		ourShader.setMat4("model", model);
 		ground.Draw(ourShader);
+		
+		
+		//textured_cube
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.15f));
+		ourShader.setMat4("model", model);
+		textured_cube.Draw(ourShader);
 
 		//skybox
 		model = glm::mat4(1.0f);

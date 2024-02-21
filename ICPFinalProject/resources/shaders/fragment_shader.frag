@@ -77,7 +77,7 @@ void main()
 
     // do the same for all point lights
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
-  	    outik += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+  	  outik += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
 
     // you can implement: and add others lights as well (like spotlights)
     outik += CalcSpotLight(spotLight, norm, FragPos, viewDir); 
