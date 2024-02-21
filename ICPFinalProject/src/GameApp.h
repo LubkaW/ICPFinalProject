@@ -28,7 +28,7 @@ public:
 	int score = 0;
 	int activeView = 1;
 	int controllMode = 0; //0=arrows,1=tracking
-
+	bool GameFreeze = false;
 	// camera
 	float lastX = SCR_WIDTH / 2.0f;
 	float lastY = SCR_HEIGHT / 2.0f;

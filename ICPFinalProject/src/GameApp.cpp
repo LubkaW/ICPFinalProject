@@ -401,77 +401,79 @@ int GameApp::run_game() {
 		}
 		//game tick 60hz
 		if (currentFrame - previousTick >= 0.016) {
-			if (controllMode == 1) {
-				plane.Yaw += (centre.x - 0.5f) * 2.0f;
-				plane.Pitch += (centre.y - 0.5f) * 2.0f;
-				if (plane.Yaw > 360) plane.Yaw -= 360;
-				if (plane.Yaw < 0) plane.Yaw += 360;
-				if (plane.Pitch > 89.0f) plane.Pitch = 89.0f;
-				if (plane.Pitch < -89.0f) plane.Pitch = -89.0f;
-				plane.updatePlaneVectors();
-				
-			}
-			//movement
-			plane.Position += plane.Front * plane.MovementSpeed * 0.001f;
+			if (GameFreeze == false) {
+				if (controllMode == 1) {
+					plane.Yaw += (centre.x - 0.5f) * 2.0f;
+					plane.Pitch += (centre.y - 0.5f) * 2.0f;
+					if (plane.Yaw > 360) plane.Yaw -= 360;
+					if (plane.Yaw < 0) plane.Yaw += 360;
+					if (plane.Pitch > 89.0f) plane.Pitch = 89.0f;
+					if (plane.Pitch < -89.0f) plane.Pitch = -89.0f;
+					plane.updatePlaneVectors();
 
-			//baloon cooldowns
-			for (unsigned int i = 0; i < 9; i++)
-			{
-				if (coin_cooldowns[i] > 0) {
-					coin_cooldowns[i] -= 1;
 				}
-			}
-			//flame
-			for (unsigned int i = 0; i < 100; i++) {
-				flame_lifecycle[i] += 0.03f;
-			}
+				//movement
+				plane.Position += plane.Front * plane.MovementSpeed * 0.001f;
 
-
-			if (coin_angle > 360.0f) {
-				coin_angle -= 360.f;
-			}
-			else {
-				coin_angle += 1.0f;
-			}
-
-			if (rotor_angle > 360.0f) {
-				rotor_angle -= 360.f;
-			}
-			else {
-				rotor_angle += 25.0f;
-			}
-			//colisions
-
-			//coins
-			for (unsigned int i = 0; i < 9; i++)
-			{
-				if (areVectorsInRange(plane.Position + plane.Front * 0.3f, coin_positions[i], 0.5f) == true) {
-					if (coin_cooldowns[i] == 0) {
-						coin_positions[i] = glm::vec3(randomFloatInRange(-5.0f, 5.0f), randomFloatInRange(0.0f, 3.0f), randomFloatInRange(-5.0f, 5.0f)),
-							score += 1;
-						coin_cooldowns[i] = 600;
+				//baloon cooldowns
+				for (unsigned int i = 0; i < 9; i++)
+				{
+					if (coin_cooldowns[i] > 0) {
+						coin_cooldowns[i] -= 1;
 					}
-
 				}
-			}
-			//bombs
-			for (int i = 0; i < int(score / 2); i++)
-			{
-				if (areVectorsInRange(plane.Position + plane.Front * 0.3f, bombs[i], 0.6f) == true) {
-					std::cout << "Boom, to byla bomba... Finalni skore: " << score << std::endl;
+				//flame
+				for (unsigned int i = 0; i < 100; i++) {
+					flame_lifecycle[i] += 0.03f;
+				}
+
+
+				if (coin_angle > 360.0f) {
+					coin_angle -= 360.f;
+				}
+				else {
+					coin_angle += 1.0f;
+				}
+
+				if (rotor_angle > 360.0f) {
+					rotor_angle -= 360.f;
+				}
+				else {
+					rotor_angle += 25.0f;
+				}
+				//colisions
+
+				//coins
+				for (unsigned int i = 0; i < 9; i++)
+				{
+					if (areVectorsInRange(plane.Position + plane.Front * 0.3f, coin_positions[i], 0.5f) == true) {
+						if (coin_cooldowns[i] == 0) {
+							coin_positions[i] = glm::vec3(randomFloatInRange(-5.0f, 5.0f), randomFloatInRange(0.0f, 3.0f), randomFloatInRange(-5.0f, 5.0f)),
+								score += 1;
+							coin_cooldowns[i] = 600;
+						}
+
+					}
+				}
+				//bombs
+				for (int i = 0; i < int(score / 2); i++)
+				{
+					if (areVectorsInRange(plane.Position + plane.Front * 0.3f, bombs[i], 0.6f) == true) {
+						std::cout << "Boom, to byla bomba... Finalni skore: " << score << std::endl;
+						glfwSetWindowShouldClose(window, true);
+					}
+				}
+
+				//ground
+				if (plane.Position.y < 0) {
+					std::cout << "Boom, havaroval jsi... Finalni skore: " << score << std::endl;
 					glfwSetWindowShouldClose(window, true);
 				}
-			}
-
-			//ground
-			if (plane.Position.y < 0) {
-				std::cout << "Boom, havaroval jsi... Finalni skore: " << score << std::endl;
-				glfwSetWindowShouldClose(window, true);
-			}
-			//skybox
-			if (areVectorsInRange(plane.Position + plane.Front * 0.5f, glm::vec3(0.0f, 0.0f, 0.0f), 10.0f) == false) {
-				std::cout << "Boom, mapa neni nekonecna... Finalni skore: " << score << std::endl << std::endl << std::endl;
-				glfwSetWindowShouldClose(window, true);
+				//skybox
+				if (areVectorsInRange(plane.Position + plane.Front * 0.5f, glm::vec3(0.0f, 0.0f, 0.0f), 10.0f) == false) {
+					std::cout << "Boom, mapa neni nekonecna... Finalni skore: " << score << std::endl << std::endl << std::endl;
+					glfwSetWindowShouldClose(window, true);
+				}
 			}
 			previousTick = currentFrame;
 		}
@@ -637,7 +639,7 @@ int GameApp::run_game() {
 
 		//skybox
 		model = glm::mat4(1.0f);
-		model = glm::scale(model, glm::vec3(10.0f));
+		model = glm::scale(model, glm::vec3(5.0f));
 		ourShader.setMat4("model", model);
 		skybox.Draw(ourShader);
 
@@ -721,21 +723,21 @@ int GameApp::run_game() {
 			light.Draw(lightShader);
 		}
 
-		//flame test
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.05f));
-		for (unsigned int i = 0; i < 100; i++) {
-			if (flame_lifecycle[i] > flame_lifespan[i]) {
-				flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
-				flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
-				flame_lifespan[i] = randomFloatInRange(0.1f, 0.5f);
-			}
-			flame_model = glm::translate(model, flame_forwards[i] * flame_lifecycle[i]);
-			flame_model = glm::scale(flame_model, glm::vec3(0.8f));
-			lightShader.setMat4("model", flame_model);
-			light.Draw(lightShader);
-		}
+		////flame test
+		//model = glm::mat4(1.0f);
+		//model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
+		//model = glm::scale(model, glm::vec3(0.05f));
+		//for (unsigned int i = 0; i < 100; i++) {
+		//	if (flame_lifecycle[i] > flame_lifespan[i]) {
+		//		flame_forwards[i] = glm::vec3(randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-10.0f, 10.0f), randomFloatInRange(-50.0f, -30.0f));
+		//		flame_lifecycle[i] = randomFloatInRange(0.01f, 0.02f);
+		//		flame_lifespan[i] = randomFloatInRange(0.1f, 0.5f);
+		//	}
+		//	flame_model = glm::translate(model, flame_forwards[i] * flame_lifecycle[i]);
+		//	flame_model = glm::scale(flame_model, glm::vec3(0.8f));
+		//	lightShader.setMat4("model", flame_model);
+		//	light.Draw(lightShader);
+		//}
 
 
 		/* Light */
@@ -811,6 +813,10 @@ void GameApp::processInput(GLFWwindow* window)
 		controllMode = 1;
 	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
 		controllMode = 0;
+	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+		GameFreeze = true;
+	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+		GameFreeze = false;
 
 }
 
